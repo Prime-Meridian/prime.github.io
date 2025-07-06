@@ -7417,18 +7417,15 @@ async function triggerInactiveAiAction(chatId) {
  * @param {string} scopeId 应用样式的作用域ID (例如 '#chat-messages' 或 '#settings-preview-area')
  * @param {string} styleTagId 要操作的 <style> 标签的ID
  */
+// 修改后的applyScopedCss函数
 function applyScopedCss(cssString, scopeId, styleTagId) {
     const styleTag = document.getElementById(styleTagId);
-    if (!styleTag) {
-        console.error(`Style tag with id "${styleTagId}" not found.`);
-        return;
-    }
+    if (!styleTag) return;
 
     if (!cssString || cssString.trim() === '') {
         styleTag.innerHTML = '';
         return;
     }
-    
     // --- 【核心修正】使用更强大的正则表达式 ---
     // 这个正则表达式能够更好地处理复杂的选择器，包括伪类、属性选择器等
     // 它会匹配所有不在 @...{} 块内，且在 { 符号之前的部分
@@ -7469,7 +7466,12 @@ function applyScopedCss(cssString, scopeId, styleTagId) {
             }
         }
     });
-    
+    // 增强作用域处理函数 - 专门解决.user和.ai样式冲突问题
+    const scopedCss = cssString
+        .replace(/\s.message-bubble.user\s+([^{]+{)/g, ${scopeId} .message-bubble.user $1)
+        .replace(/\s.message-bubble.ai\s+([^{]+{)/g, ${scopeId} .message-bubble.ai $1)
+        .replace(/\s*.message-bubble\s+([^{]+{)/g, ${scopeId} .message-bubble $1);
+
     styleTag.innerHTML = scopedCss;
 }
 
