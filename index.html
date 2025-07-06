@@ -7419,60 +7419,21 @@ async function triggerInactiveAiAction(chatId) {
  */
 function applyScopedCss(cssString, scopeId, styleTagId) {
     const styleTag = document.getElementById(styleTagId);
-    if (!styleTag) {
-        console.error(`Style tag with id "${styleTagId}" not found.`);
-        return;
-    }
+    if (!styleTag) return;
 
     if (!cssString || cssString.trim() === '') {
         styleTag.innerHTML = '';
         return;
     }
-    
-    // --- 【核心修正】使用更强大的正则表达式 ---
-    // 这个正则表达式能够更好地处理复杂的选择器，包括伪类、属性选择器等
-    // 它会匹配所有不在 @...{} 块内，且在 { 符号之前的部分
-    let scopedCss = '';
-    // 移除注释，防止干扰
-    cssString = cssString.replace(/\/\*[\s\S]*?\*\//g, '');
 
-    // 使用一个简单的解析器来处理 @ 规则和普通规则
-    const cssBlocks = cssString.split('}');
-    cssBlocks.forEach(block => {
-        if (block.trim() === '') return;
+    // 增强作用域处理函数 - 专门解决.user和.ai样式冲突问题
+    const scopedCss = cssString
+        .replace(/\s.message-bubble.user\s+([^{]+{)/g, ${scopeId} .message-bubble.user $1)
+        .replace(/\s.message-bubble.ai\s+([^{]+{)/g, ${scopeId} .message-bubble.ai $1)
+        .replace(/\s*.message-bubble\s+([^{]+{)/g, ${scopeId} .message-bubble $1);
 
-        const parts = block.split('{');
-        if (parts.length < 2) return;
-        
-        let selectors = parts[0].trim();
-        const rules = `{${parts.slice(1).join('{')}}`;
-
-        // 如果是 @ 规则 (如 @keyframes), 则保持原样
-        if (selectors.startsWith('@')) {
-            scopedCss += `${selectors} ${rules}}\n`;
-        } else {
-            // 对普通规则的每个选择器添加作用域
-            const scopedSelectors = selectors
-                .split(',')
-                .map(selector => {
-                    const trimmedSelector = selector.trim();
-                    if (trimmedSelector) {
-                        return `${scopeId} ${trimmedSelector}`;
-                    }
-                    return '';
-                })
-                .filter(Boolean) // 移除空字符串
-                .join(', ');
-            
-            if (scopedSelectors) {
-                scopedCss += `${scopedSelectors} ${rules}}\n`;
-            }
-        }
-    });
-    
     styleTag.innerHTML = scopedCss;
 }
-
 // ▲▲▲ 替换结束 ▲▲▲
 
 // ▼▼▼ 请用这个【修正版】函数，完整替换掉旧的 updateSettingsPreview 函数 ▼▼▼
